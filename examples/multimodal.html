@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal Agent Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .section h3 {
+            margin-top: 0;
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9ff;
+        }
+
+        .upload-area.has-file {
+            border-color: #28a745;
+            background-color: #f8fff8;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .preview-area {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .prompt-area {
+            margin-top: 20px;
+        }
+
+        .prompt-input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #545b62;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results-area {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            min-height: 100px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .response-content {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+            margin-top: 15px;
+        }
+
+        .file-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .examples {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .examples h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+
+        .examples ul {
+            margin-bottom: 0;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .config-row label {
+            flex: 0 0 150px;
+            font-weight: bold;
+        }
+
+        .config-row input, .config-row select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Multimodal Agent Examples</h1>
+        <p>This page demonstrates how to use agents that can process both text and images, audio, or other media types.</p>
+
+        <!-- Configuration Section -->
+        <div class="config-section">
+            <h4>Agent Configuration</h4>
+            <div class="config-row">
+                <label>API Endpoint:</label>
+                <input type="text" id="apiEndpoint" value="https://api.openai.com/v1/chat/completions">
+            </div>
+            <div class="config-row">
+                <label>API Key:</label>
+                <input type="password" id="apiKey" placeholder="Enter your API key">
+            </div>
+            <div class="config-row">
+                <label>Model:</label>
+                <select id="modelSelect">
+                    <option value="gpt-4-vision-preview">GPT-4 Vision</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="claude-3-opus">Claude 3 Opus</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Image + Text Analysis -->
+        <div class="section">
+            <h3>🖼️ Image Analysis with Text</h3>
+            
+            <div class="examples">
+                <h4>Example Prompts:</h4>
+                <ul>
+                    <li>"Describe what you see in this image"</li>
+                    <li>"What emotions are expressed in this photo?"</li>
+                    <li>"Extract all text from this image"</li>
+                    <li>"Identify any objects or landmarks in this image"</li>
+                    <li>"What's the mood or atmosphere of this scene?"</li>
+                </ul>
+            </div>
+
+            <div class="upload-area" id="imageUploadArea" onclick="document.getElementById('imageInput').click()">
+                <div class="upload-content">
+                    <p>📁 Click to upload an image or drag and drop</p>
+                    <p style="font-size: 14px; color: #666;">Supports: JPG, PNG, GIF, WebP (max 10MB)</p>
+                </div>
+            </div>
+            
+            <input type="file" id="imageInput" class="file-input" accept="image/*">
+            
+            <div class="preview-area" id="imagePreview" style="display: none;">
+                <img id="previewImage" class="image-preview" alt="Preview">
+                <div class="file-info" id="imageInfo"></div>
+            </div>
+
+            <div class="prompt-area">
+                <textarea 
+                    class="prompt-input" 
+                    id="imagePrompt" 
+                    placeholder="Enter your prompt about the image...">Describe what you see in this image in detail.</textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="analyzeImageBtn" disabled>Analyze Image</button>
+                <button class="btn btn-secondary" id="clearImageBtn">Clear</button>
+            </div>
+
+            <div class="results-area" id="imageResults" style="display: none;"></div>
+        </div>
+
+        <!-- Audio Analysis -->
+        <div class="section">
+            <h3>🎵 Audio Analysis</h3>
+            
+            <div class="examples">
+                <h4>Example Use Cases:</h4>
+                <ul>
+                    <li>Transcribe speech to text</li>
+                    <li>Identify music genre or instruments</li>
+                    <li>Analyze sentiment in speech</li>
+                    <li>Extract key information from audio recordings</li>
+                </ul>
+            </div>
+
+            <div class="upload-area" id="audioUploadArea" onclick="document.getElementById('audioInput').click()">
+                <div class="upload-content">
+                    <p>🎵 Click to upload an audio file</p>
+                    <p style="font-size: 14px; color: #666;">Supports: MP3, WAV, M4A, FLAC (max 25MB)</p>
+                </div>
+            </div>
+            
+            <input type="file" id="audioInput" class="file-input" accept="audio/*">
+            
+            <div class="preview-area" id="audioPreview" style="display: none;">
+                <audio id="previewAudio" controls style="width: 100%;"></audio>
+                <div class="file-info" id="audioInfo"></div>
+            </div>
+
+            <div class="prompt-area">
+                <textarea 
+                    class="prompt-input" 
+                    id="audioPrompt" 
+                    placeholder="What would you like to know about this audio?">Transcribe this audio and summarize the main points.</textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="analyzeAudioBtn" disabled>Analyze Audio</button>
+                <button class="btn btn-secondary" id="clearAudioBtn">Clear</button>
+            </div>
+
+            <div class="results-area" id="audioResults" style="display: none;"></div>
+        </div>
+
+        <!-- Document Analysis -->
+        <div class="section">
+            <h3>📄 Document Analysis</h3>
+            
+            <div class="examples">
+                <h4>Example Tasks:</h4>
+                <ul>
+                    <li>Extract information from PDFs</li>
+                    <li>Summarize document content</li>
+                    <li>Answer questions about documents</li>
+                    <li>Compare multiple documents</li>
+                </ul>
+            </div>
+
+            <div class="upload-area" id="documentUploadArea" onclick="document.getElementById('documentInput').click()">
+                <div class="upload-content">
+                    <p>📄 Click to upload a document</p>
+                    <p style="font-size: 14px; color: #666;">Supports: PDF, DOC, DOCX, TXT (max 50MB)</p>
+                </div>
+            </div>
+            
+            <input type="file" id="documentInput" class="file-input" accept=".pdf,.doc,.docx,.txt">
+            
+            <div class="preview-area" id="documentPreview" style="display: none;">
+                <div class="file-info" id="documentInfo"></div>
+            </div>
+
+            <div class="prompt-area">
+                <textarea 
+                    class="prompt-input" 
+                    id="documentPrompt" 
+                    placeholder="What would you like to know about this document?">Summarize the main points of this document.</textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="analyzeDocumentBtn" disabled>Analyze Document</button>
+                <button class="btn btn-secondary" id="clearDocumentBtn">Clear</button>
+            </div>
+
+            <div class="results-area" id="documentResults" style="display: none;"></div>
+        </div>
+
+        <!-- Multi-file Analysis -->
+        <div class="section">
+            <h3>🔄 Multi-file Comparison</h3>
+            
+            <div class="examples">
+                <h4>Example Tasks:</h4>
+                <ul>
+                    <li>Compare two images side by side</li>
+                    <li>Analyze changes between document versions</li>
+                    <li>Find similarities in multiple files</li>
+                    <li>Cross-reference information across files</li>
+                </ul>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4>File 1</h4>
+                    <div class="upload-area" id="multiFile1Area" onclick="document.getElementById('multiFile1Input').click()">
+                        <p>Upload first file</p>
+                    </div>
+                    <input type="file" id="multiFile1Input" class="file-input" accept="image/*,.pdf,.doc,.docx,.txt">
+                    <div class="preview-area" id="multiFile1Preview" style="display: none;"></div>
+                </div>
+                
+                <div>
+                    <h4>File 2</h4>
+                    <div class="upload-area" id="multiFile2Area" onclick="document.getElementById('multiFile2Input').click()">
+                        <p>Upload second file</p>
+                    </div>
+                    <input type="file" id="multiFile2Input" class="file-input" accept="image/*,.pdf,.doc,.docx,.txt">
+                    <div class="preview-area" id="multiFile2Preview" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="prompt-area">
+                <textarea 
+                    class="prompt-input" 
+                    id="multiPrompt" 
+                    placeholder="What comparison would you like me to make between these files?">Compare these two files and highlight the key differences.</textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="compareFilesBtn" disabled>Compare Files</button>
+                <button class="btn btn-secondary" id="clearMultiBtn">Clear All</button>
+            </div>
+
+            <div class="results-area" id="multiResults" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        class MultimodalAgent {
+            constructor(config) {
+                this.config = {
+                    apiEndpoint: config.apiEndpoint || 'https://api.openai.com/v1/chat/completions',
+                    apiKey: config.apiKey,
+                    model: config.model || 'gpt-4-vision-preview',
+                    maxTokens: config.maxTokens || 500,
+                    temperature: config.temperature || 0.7
+                };
+            }
+
+            async analyzeImage(file, prompt) {
+                try {
+                    const base64 = await this.fileToBase64(file);
+                    
+                    // Simulate API call for demo purposes
+                    // Replace with actual API integration
+                    return await this.simulateAPICall({
+                        type: 'image',
+                        content: prompt,
+                        image: base64,
+                        fileName: file.name,
+                        fileSize: file.size
+                    });
+                } catch (error) {
+                    throw new Error(`Image analysis failed: ${error.message}`);
+                }
+            }
+
+            async analyzeAudio(file, prompt) {
+                try {
+                    // For audio, you might need to send the file differently
+                    const formData = new FormData();
+                    formData.append('audio', file);
+                    formData.append('prompt', prompt);
+                    formData.append('model', this.config.model);
+
+                    return await this.simulateAPICall({
+                        type: 'audio',
+                        content: prompt,
+                        fileName: file.name,
+                        fileSize: file.size
+                    });
+                } catch (error) {
+                    throw new Error(`Audio analysis failed: ${error.message}`);
+                }
+            }
+
+            async analyzeDocument(file, prompt) {
+                try {
+                    return await this.simulateAPICall({
+                        type: 'document',
+                        content: prompt,
+                        fileName: file.name,
+                        fileSize: file.size
+                    });
+                } catch (error) {
+                    throw new Error(`Document analysis failed: ${error.message}`);
+                }
+            }
+
+            async compareFiles(file1, file2, prompt) {
+                try {
+                    return await this.simulateAPICall({
+                        type: 'comparison',
+                        content: prompt,
+                        file1: { name: file1.name, size: file1.size },
+                        file2: { name: file2.name, size: file2.size }
+                    });
+                } catch (error) {
+                    throw new Error(`File comparison failed: ${error.message}`);
+                }
+            }
+
+            async fileToBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            async simulateAPICall(data) {
+                // Simulate network delay
+                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+
+                // Simulate different responses based on type
+                switch (data.type) {
+                    case 'image':
+                        return {
+                            content: `I can see this is an image file named "${data.fileName}" (${this.formatFileSize(data.fileSize)}). Your prompt was: "${data.content}"\n\nThis is a simulated response. In a real implementation, the agent would analyze the actual image content and provide detailed insights based on your prompt.\n\nTo use real image analysis, configure your API key above and ensure your chosen model supports vision capabilities.`,
+                            confidence: 0.95,
+                            processingTime: '2.3s'
+                        };
+
+                    case 'audio':
+                        return {
+                            content: `I received an audio file named "${data.fileName}" (${this.formatFileSize(data.fileSize)}). Your prompt was: "${data.content}"\n\nThis is a simulated response. In a real implementation, the agent would:\n- Transcribe the audio content\n- Analyze speech patterns\n- Extract key information\n- Respond to your specific prompt\n\nTo use real audio analysis, configure your API key and ensure your endpoint supports audio processing.`,
+                            confidence: 0.88,
+                            processingTime: '4.1s'
+                        };
+
+                    case 'document':
+                        return {
+                            content: `I received a document named "${data.fileName}" (${this.formatFileSize(data.fileSize)}). Your prompt was: "${data.content}"\n\nThis is a simulated response. In a real implementation, the agent would:\n- Extract text from the document\n- Understand the document structure\n- Analyze the content based on your prompt\n- Provide specific insights or answers\n\nTo use real document analysis, configure your API key and ensure your endpoint supports document processing.`,
+                            confidence: 0.92,
+                            processingTime: '3.7s'
+                        };
+
+                    case 'comparison':
+                        return {
+                            content: `I'm comparing two files:\n- File 1: ${data.file1.name} (${this.formatFileSize(data.file1.size)})\n- File 2: ${data.file2.name} (${this.formatFileSize(data.file2.size)})\n\nYour prompt was: "${data.content}"\n\nThis is a simulated response. In a real implementation, the agent would:\n- Analyze both files in detail\n- Identify similarities and differences\n- Provide a comprehensive comparison\n- Answer your specific comparison questions\n\nTo use real file comparison, configure your API key above.`,
+                            confidence: 0.89,
+                            processingTime: '5.2s'
+                        };
+
+                    default:
+                        throw new Error('Unknown analysis type');
+                }
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // Uncomment for real API integration
+            /*
+            async makeRealAPICall(data) {
+                const response = await fetch(this.config.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.config.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: this.config.model,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: [
+                                    { type: 'text', text: data.content },
+                                    ...(data.image ? [{ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${data.image}` } }] : [])
+                                ]
+                            }
+                        ],
+                        max_tokens: this.config.maxTokens,
+                        temperature: this.config.temperature
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                return {
+                    content: result.choices[0].message.content,
+                    usage: result.usage
+                };
+            }
+            */
+        }
+
+        // UI Management
+        class MultimodalUI {
+            constructor() {
+                this.agent = null;
+                this.files = {
+                    image: null,
+                    audio: null,
+                    document: null,
+                    multi1: null,
+                    multi2: null
+                };
+                
+                this.initializeAgent();
+                this.setupEventListeners();
+                this.setupDragAndDrop();
+            }
+
+            initializeAgent() {
+                const config = {
+                    apiEndpoint: document.getElementById('apiEndpoint').value,
+                    apiKey: document.getElementById('apiKey').value,
+                    model: document.getElementById('modelSelect').value
+                };
+                
+                this.agent = new MultimodalAgent(config);
+            }
+
+            setupEventListeners() {
+                // Config changes
+                ['apiEndpoint', 'apiKey', 'modelSelect'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => {
+                        this.initializeAgent();
+                    });
+                });
+
+                // File inputs
+                document.getElementById('imageInput').addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0], 'image');
+                });
+
+                document.getElementById('audioInput').addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0], 'audio');
+                });
+
+                document.getElementById('documentInput').addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0], 'document');
+                });
+
+                document.getElementById('multiFile1Input').addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0], 'multi1');
+                });
+
+                document.getElementById('multiFile2Input').addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0], 'multi2');
+                });
+
+                // Action buttons
+                document.getElementById('analyzeImageBtn').addEventListener('click', () => {
+                    this.analyzeContent('image');
+                });
+
+                document.getElementById('analyzeAudioBtn').addEventListener('click', () => {
+                    this.analyzeContent('audio');
+                });
+
+                document.getElementById('analyzeDocumentBtn').addEventListener('click', () => {
+                    this.analyzeContent('document');
+                });
+
+                document.getElementById('compareFilesBtn').addEventListener('click', () => {
+                    this.compareFiles();
+                });
+
+                // Clear buttons
+                document.getElementById('clearImageBtn').addEventListener('click', () => {
+                    this.clearFile('image');
+                });
+
+                document.getElementById('clearAudioBtn').addEventListener('click', () => {
+                    this.clearFile('audio');
+                });
+
+                document.getElementById('clearDocumentBtn').addEventListener('click', () => {
+                    this.clearFile('document');
+                });
+
+                document.getElementById('clearMultiBtn').addEventListener('click', () => {
+                    this.clearFile('multi1');
+                    this.clearFile('multi2');
+                });
+            }
+
+            setupDragAndDrop() {
+                ['imageUploadArea', 'audioUploadArea', 'documentUploadArea', 'multiFile1Area', 'multiFile2Area'].forEach(id => {
+                    const area = document.getElementById(id);
+                    
+                    area.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        area.classList.add('dragover');
+                    });
+
+                    area.addEventListener('dragleave', () => {
+                        area.classList.remove('dragover');
+                    });
+
+                    area.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        area.classList.remove('dragover');
+                        
+                        const files = e.dataTransfer.files;
+                        if (files.length > 0) {
+                            const type = id.replace('UploadArea', '').replace('Area', '');
+                            this.handleFileSelect(files[0], type === 'multiFile1' ? 'multi1' : type === 'multiFile2' ? 'multi2' : type);
+                        }
+                    });
+                });
+            }
+
+            handleFileSelect(file, type) {
+                if (!file) return;
+
+                this.files[type] = file;
+                this.updateFileDisplay(file, type);
+                this.updateButtonStates();
+            }
+
+            updateFileDisplay(file, type) {
+                const uploadArea = document.getElementById(type === 'multi1' ? 'multiFile1Area' : type === 'multi2' ? 'multiFile2Area' : `${type}UploadArea`);
+                const preview = document.getElementById(type === 'multi1' ? 'multiFile1Preview' : type === 'multi2' ? 'multiFile2Preview' : `${type}Preview`);
+                
+                uploadArea.classList.add('has-file');
+                uploadArea.innerHTML = `<p>✅ ${file.name}</p><p style="font-size: 14px; color: #666;">${this.formatFileSize(file.size)}</p>`;
+
+                if (preview) {
+                    preview.style.display = 'block';
+                    
+                    if (type === 'image' && file.type.startsWith('image/')) {
+                        const img = document.getElementById('previewImage');
+                        img.src = URL.createObjectURL(file);
+                        
+                        document.getElementById('imageInfo').innerHTML = `
+                            <strong>File:</strong> ${file.name}<br>
+                            <strong>Size:</strong> ${this.formatFileSize(file.size)}<br>
+                            <strong>Type:</strong> ${file.type}
+                        `;
+                    } else if (type === 'audio' && file.type.startsWith('audio/')) {
+                        const audio = document.getElementById('previewAudio');
+                        audio.src = URL.createObjectURL(file);
+                        
+                        document.getElementById('audioInfo').innerHTML = `
+                            <strong>File:</strong> ${file.name}<br>
+                            <strong>Size:</strong> ${this.formatFileSize(file.size)}<br>
+                            <strong>Type:</strong> ${file.type}
+                        `;
+                    } else if (type === 'document') {
+                        document.getElementById('documentInfo').innerHTML = `
+                            <strong>File:</strong> ${file.name}<br>
+                            <strong>Size:</strong> ${this.formatFileSize(file.size)}<br>
+                            <strong>Type:</strong> ${file.type}
+                        `;
+                    }
+                }
+            }
+
+            updateButtonStates() {
+                document.getElementById('analyzeImageBtn').disabled = !this.files.image;
+                document.getElementById('analyzeAudioBtn').disabled = !this.files.audio;
+                document.getElementById('analyzeDocumentBtn').disabled = !this.files.document;
+                document.getElementById('compareFilesBtn').disabled = !(this.files.multi1 && this.files.multi2);
+            }
+
+            async analyzeContent(type) {
+                const button = document.getElementById(`analyze${type.charAt(0).toUpperCase() + type.slice(1)}Btn`);
+                const results = document.getElementById(`${type}Results`);
+                const prompt = document.getElementById(`${type}Prompt`).value;
+
+                if (!this.files[type]) {
+                    alert('Please select a file first');
+                    return;
+                }
+
+                try {
+                    button.disabled = true;
+                    button.textContent = 'Analyzing...';
+                    
+                    this.showLoading(results, `Analyzing ${type}...`);
+
+                    let response;
+                    switch (type) {
+                        case 'image':
+                            response = await this.agent.analyzeImage(this.files[type], prompt);
+                            break;
+                        case 'audio':
+                            response = await this.agent.analyzeAudio(this.files[type], prompt);
+                            break;
+                        case 'document':
+                            response = await this.agent.analyzeDocument(this.files[type], prompt);
+                            break;
+                    }
+
+                    this.showResults(results, response);
+
+                } catch (error) {
+                    this.showError(results, error.message);
+                } finally {
+                    button.disabled = false;
+                    button.textContent = `Analyze ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+                }
+            }
+
+            async compareFiles() {
+                const button = document.getElementById('compareFilesBtn');
+                const results = document.getElementById('multiResults');
+                const prompt = document.getElementById('multiPrompt').value;
+
+                if (!this.files.multi1 || !this.files.multi2) {
+                    alert('Please select both files first');
+                    return;
+                }
+
+                try {
+                    button.disabled = true;
+                    button.textContent = 'Comparing...';
+                    
+                    this.showLoading(results, 'Comparing files...');
+
+                    const response = await this.agent.compareFiles(this.files.multi1, this.files.multi2, prompt);
+                    this.showResults(results, response);
+
+                } catch (error) {
+                    this.showError(results, error.message);
+                } finally {
+                    button.disabled = false;
+                    button.textContent = 'Compare Files';
+                }
+            }
+
+            clearFile(type) {
+                this.files[type] = null;
+                
+                const uploadArea = document.getElementById(type === 'multi1' ? 'multiFile1Area' : type === 'multi2' ? 'multiFile2Area' : `${type}UploadArea`);
+                const preview = document.getElementById(type === 'multi1' ? 'multiFile1Preview' : type === 'multi2' ? 'multiFile2Preview' : `${type}Preview`);
+                const input = document.getElementById(type === 'multi1' ? 'multiFile1Input' : type === 'multi2' ? 'multiFile2Input' : `${type}Input`);
+                const results = document.getElementById(type.startsWith('multi') ? 'multiResults' : `${type}Results`);
+
+                uploadArea.classList.remove('has-file');
+                
+                if (type === 'multi1') {
+                    uploadArea.innerHTML = '<p>Upload first file</p>';
+                } else if (type === 'multi2') {
+                    uploadArea.innerHTML = '<p>Upload second file</p>';
+                } else {
+                    uploadArea.innerHTML = uploadArea.getAttribute('data-original') || uploadArea.innerHTML;
+                }
+
+                if (preview) {
+                    preview.style.display = 'none';
+                }
+
+                if (input) {
+                    input.value = '';
+                }
+
+                if (results) {
+                    results.style.display = 'none';
+                }
+
+                this.updateButtonStates();
+            }
+
+            showLoading(container, message) {
+                container.style.display = 'block';
+                container.innerHTML = `<div class="loading">${message}</div>`;
+            }
+
+            showResults(container, response) {
+                container.style.display = 'block';
+                container.innerHTML = `
+                    <div class="success">✅ Analysis completed successfully</div>
+                    <div class="response-content">
+                        <p><strong>Response:</strong></p>
+                        <p>${response.content.replace(/\n/g, '<br>')}</p>
+                        ${response.confidence ? `<p><strong>Confidence:</strong> ${(response.confidence * 100).toFixed(1)}%</p>` : ''}
+                        ${response.processingTime ? `<p><strong>Processing Time:</strong> ${response.processingTime}</p>` : ''}
+                    </div>
+                `;
+            }
+
+            showError(container, message) {
+                container.style.display = 'block';
+                container.innerHTML = `<div class="error">❌ ${message}</div>`;
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new MultimodalUI();
+        });
+    </script>
+</body>
+</html>

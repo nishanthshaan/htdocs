@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Usage Examples - Complete Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .example-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .example-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .example-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .example-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .example-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .example-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .example-features {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .example-features li {
+            padding: 0.3rem 0;
+            color: #555;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .example-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            margin-left: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .getting-started {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .getting-started h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .step {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            line-height: 40px;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .step h3 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .step p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .footer p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: #764ba2;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .examples-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        .code-preview {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #495057;
+            overflow-x: auto;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .tech-tag {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🤖 Agent Usage Examples</h1>
+        <p>Complete guide to integrating and using AI agents in your applications</p>
+    </header>
+
+    <div class="container">
+        <div class="getting-started">
+            <h2>🚀 Getting Started</h2>
+            <p>Learn how to integrate AI agents into your applications with these comprehensive examples. Each example includes complete source code, configuration options, and best practices.</p>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Choose Your Method</h3>
+                    <p>Select from REST API, WebSocket, or multimodal integration based on your needs</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Configure Agent</h3>
+                    <p>Set up API keys, model parameters, and customize behavior for your use case</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Integrate & Test</h3>
+                    <p>Add the agent to your application and test with the provided examples</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Deploy & Monitor</h3>
+                    <p>Deploy to production with proper error handling and monitoring</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="examples-grid">
+            <!-- Basic Chat Agent -->
+            <div class="example-card">
+                <div class="example-icon">💬</div>
+                <h3 class="example-title">Basic Chat Agent</h3>
+                <p class="example-description">
+                    A simple, interactive chat interface that demonstrates basic agent integration with a clean UI and real-time responses.
+                </p>
+                <ul class="example-features">
+                    <li>Interactive chat interface</li>
+                    <li>Configurable API settings</li>
+                    <li>Real-time response streaming</li>
+                    <li>Error handling and retry logic</li>
+                    <li>Responsive design</li>
+                </ul>
+                <div class="tech-stack">
+                    <span class="tech-tag">HTML5</span>
+                    <span class="tech-tag">JavaScript</span>
+                    <span class="tech-tag">CSS3</span>
+                    <span class="tech-tag">REST API</span>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <a href="examples/basic-chat.html" class="btn">Try Demo</a>
+                    <a href="#" onclick="showCode('basic-chat')" class="btn btn-secondary">View Code</a>
+                </div>
+            </div>
+
+            <!-- API Integration -->
+            <div class="example-card">
+                <div class="example-icon">🔌</div>
+                <h3 class="example-title">API Integration Examples</h3>
+                <p class="example-description">
+                    Comprehensive examples showing different ways to integrate with agent APIs, including REST, streaming, and batch processing.
+                </p>
+                <ul class="example-features">
+                    <li>RESTful API integration</li>
+                    <li>Streaming responses</li>
+                    <li>Batch processing</li>
+                    <li>Retry mechanisms</li>
+                    <li>Rate limiting</li>
+                </ul>
+                <div class="tech-stack">
+                    <span class="tech-tag">JavaScript</span>
+                    <span class="tech-tag">Fetch API</span>
+                    <span class="tech-tag">Async/Await</span>
+                    <span class="tech-tag">Error Handling</span>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <a href="#" onclick="showCode('api-integration')" class="btn">View Examples</a>
+                    <a href="examples/api-integration.js" class="btn btn-secondary">Download JS</a>
+                </div>
+            </div>
+
+            <!-- WebSocket Agent -->
+            <div class="example-card">
+                <div class="example-icon">⚡</div>
+                <h3 class="example-title">Real-time WebSocket Agent</h3>
+                <p class="example-description">
+                    Advanced real-time communication with agents using WebSockets, including reconnection logic and event handling.
+                </p>
+                <ul class="example-features">
+                    <li>Real-time bidirectional communication</li>
+                    <li>Auto-reconnection</li>
+                    <li>Heartbeat monitoring</li>
+                    <li>Event-driven architecture</li>
+                    <li>Debug interface</li>
+                </ul>
+                <div class="tech-stack">
+                    <span class="tech-tag">WebSocket</span>
+                    <span class="tech-tag">JavaScript</span>
+                    <span class="tech-tag">Event Handling</span>
+                    <span class="tech-tag">Real-time</span>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <a href="#" onclick="showWebSocketDemo()" class="btn">Try Demo</a>
+                    <a href="examples/websocket-agent.js" class="btn btn-secondary">View Code</a>
+                </div>
+            </div>
+
+            <!-- Multimodal Agent -->
+            <div class="example-card">
+                <div class="example-icon">🎭</div>
+                <h3 class="example-title">Multimodal Agent</h3>
+                <p class="example-description">
+                    Process text, images, audio, and documents with advanced AI agents that understand multiple types of content.
+                </p>
+                <ul class="example-features">
+                    <li>Image analysis and description</li>
+                    <li>Audio transcription and analysis</li>
+                    <li>Document processing</li>
+                    <li>File comparison</li>
+                    <li>Drag-and-drop interface</li>
+                </ul>
+                <div class="tech-stack">
+                    <span class="tech-tag">Computer Vision</span>
+                    <span class="tech-tag">Speech Recognition</span>
+                    <span class="tech-tag">Document AI</span>
+                    <span class="tech-tag">File Upload</span>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <a href="examples/multimodal.html" class="btn">Try Demo</a>
+                    <a href="#" onclick="showCode('multimodal')" class="btn btn-secondary">View Code</a>
+                </div>
+            </div>
+
+            <!-- Configuration Guide -->
+            <div class="example-card">
+                <div class="example-icon">⚙️</div>
+                <h3 class="example-title">Configuration Examples</h3>
+                <p class="example-description">
+                    Learn how to configure agents for different environments and use cases with comprehensive configuration examples.
+                </p>
+                <ul class="example-features">
+                    <li>Environment-specific configs</li>
+                    <li>Agent specialization</li>
+                    <li>Security configurations</li>
+                    <li>Performance tuning</li>
+                    <li>Validation helpers</li>
+                </ul>
+                <div class="tech-stack">
+                    <span class="tech-tag">Configuration</span>
+                    <span class="tech-tag">Environment Variables</span>
+                    <span class="tech-tag">Security</span>
+                    <span class="tech-tag">Best Practices</span>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <a href="#" onclick="showCode('configuration')" class="btn">View Examples</a>
+                    <a href="examples/agent-config.js" class="btn btn-secondary">Download JS</a>
+                </div>
+            </div>
+
+            <!-- Best Practices -->
+            <div class="example-card">
+                <div class="example-icon">🏆</div>
+                <h3 class="example-title">Best Practices Guide</h3>
+                <p class="example-description">
+                    Essential patterns and practices for production-ready agent implementations, including security and performance tips.
+                </p>
+                <ul class="example-features">
+                    <li>Error handling strategies</li>
+                    <li>Rate limiting implementation</li>
+                    <li>Security considerations</li>
+                    <li>Performance optimization</li>
+                    <li>Testing approaches</li>
+                </ul>
+                <div class="tech-stack">
+                    <span class="tech-tag">Security</span>
+                    <span class="tech-tag">Performance</span>
+                    <span class="tech-tag">Testing</span>
+                    <span class="tech-tag">Production</span>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <a href="#" onclick="showBestPractices()" class="btn">Read Guide</a>
+                    <a href="README.md" class="btn btn-secondary">Full Docs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Comprehensive agent integration examples for developers</p>
+        <div class="footer-links">
+            <a href="README.md">Documentation</a>
+            <a href="examples/">View All Examples</a>
+            <a href="#" onclick="showQuickStart()">Quick Start</a>
+            <a href="https://github.com/nishanthshaan/htdocs">GitHub Repository</a>
+        </div>
+    </footer>
+
+    <!-- Code Preview Modal -->
+    <div id="codeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; padding: 2rem;">
+        <div style="background: white; border-radius: 10px; max-width: 800px; max-height: 80vh; margin: 0 auto; padding: 2rem; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 id="codeModalTitle">Code Example</h3>
+                <button onclick="closeCodeModal()" style="background: #dc3545; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">Close</button>
+            </div>
+            <div id="codeModalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        function showCode(example) {
+            const modal = document.getElementById('codeModal');
+            const title = document.getElementById('codeModalTitle');
+            const content = document.getElementById('codeModalContent');
+
+            const codeExamples = {
+                'basic-chat': `
+<div class="code-preview">
+// Basic Agent Implementation
+class SimpleAgent {
+    constructor(config) {
+        this.apiEndpoint = config.apiEndpoint;
+        this.apiKey = config.apiKey;
+        this.model = config.model || 'gpt-3.5-turbo';
+    }
+
+    async sendMessage(message) {
+        const response = await fetch(this.apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': \`Bearer \${this.apiKey}\`
+            },
+            body: JSON.stringify({
+                model: this.model,
+                messages: [{ role: 'user', content: message }]
+            })
+        });
+
+        const data = await response.json();
+        return data.choices[0].message.content;
+    }
+}
+
+// Usage
+const agent = new SimpleAgent({
+    apiEndpoint: 'https://api.openai.com/v1/chat/completions',
+    apiKey: 'your-api-key',
+    model: 'gpt-3.5-turbo'
+});
+
+const response = await agent.sendMessage('Hello, agent!');
+console.log(response);
+</div>`,
+
+                'api-integration': `
+<div class="code-preview">
+// Advanced API Integration with Retry Logic
+class ResilientAgent {
+    constructor(config) {
+        this.config = config;
+        this.maxRetries = config.maxRetries || 3;
+        this.retryDelay = config.retryDelay || 1000;
+    }
+
+    async sendMessage(message, options = {}) {
+        let lastError;
+
+        for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+            try {
+                const response = await fetch(this.config.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': \`Bearer \${this.config.apiKey}\`
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        ...options
+                    })
+                });
+
+                if (response.ok) {
+                    return await response.json();
+                }
+
+                throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+
+            } catch (error) {
+                lastError = error;
+                
+                if (attempt < this.maxRetries) {
+                    const delay = this.retryDelay * Math.pow(2, attempt - 1);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        throw new Error(\`All retry attempts failed: \${lastError.message}\`);
+    }
+}
+</div>`,
+
+                'multimodal': `
+<div class="code-preview">
+// Multimodal Agent for Processing Images and Text
+class MultimodalAgent {
+    async analyzeImage(file, prompt) {
+        const base64 = await this.fileToBase64(file);
+        
+        const response = await fetch(this.config.apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': \`Bearer \${this.config.apiKey}\`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4-vision-preview',
+                messages: [{
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: prompt },
+                        { 
+                            type: 'image_url', 
+                            image_url: { url: \`data:image/jpeg;base64,\${base64}\` }
+                        }
+                    ]
+                }]
+            })
+        });
+
+        return await response.json();
+    }
+
+    async fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+}
+</div>`,
+
+                'configuration': `
+<div class="code-preview">
+// Configuration Factory for Different Environments
+class AgentConfigFactory {
+    static create(environment, agentType = 'basic', customOptions = {}) {
+        let baseConfig;
+
+        switch (environment) {
+            case 'development':
+                baseConfig = {
+                    apiEndpoint: 'http://localhost:3000/api/agent',
+                    timeout: 15000,
+                    enableLogging: true,
+                    enableDebug: true
+                };
+                break;
+                
+            case 'production':
+                baseConfig = {
+                    apiEndpoint: 'https://api.youragent.com/v1/chat',
+                    timeout: 60000,
+                    retryAttempts: 3,
+                    enableMetrics: true
+                };
+                break;
+        }
+
+        // Apply agent type specialization
+        switch (agentType) {
+            case 'conversational':
+                Object.assign(baseConfig, {
+                    temperature: 0.9,
+                    systemPrompt: 'You are a helpful conversational AI.'
+                });
+                break;
+                
+            case 'analytical':
+                Object.assign(baseConfig, {
+                    temperature: 0.1,
+                    systemPrompt: 'You provide precise analytical insights.'
+                });
+                break;
+        }
+
+        return { ...baseConfig, ...customOptions };
+    }
+}
+
+// Usage
+const config = AgentConfigFactory.create('production', 'conversational', {
+    apiKey: process.env.AGENT_API_KEY,
+    maxTokens: 300
+});
+</div>`
+            };
+
+            title.textContent = `${example.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} Example`;
+            content.innerHTML = codeExamples[example] || '<p>Code example not found.</p>';
+            modal.style.display = 'block';
+        }
+
+        function closeCodeModal() {
+            document.getElementById('codeModal').style.display = 'none';
+        }
+
+        function showWebSocketDemo() {
+            alert('WebSocket demo would open a connection to a live agent service. Configure your WebSocket endpoint in the examples to try it out!');
+        }
+
+        function showBestPractices() {
+            showCode('best-practices');
+            document.getElementById('codeModalTitle').textContent = 'Best Practices Guide';
+            document.getElementById('codeModalContent').innerHTML = `
+                <div style="padding: 1rem;">
+                    <h4>🔒 Security Best Practices</h4>
+                    <ul>
+                        <li>Never expose API keys in client-side code</li>
+                        <li>Use environment variables for sensitive configuration</li>
+                        <li>Implement proper input validation and sanitization</li>
+                        <li>Use HTTPS for all API communications</li>
+                    </ul>
+
+                    <h4>⚡ Performance Optimization</h4>
+                    <ul>
+                        <li>Implement proper rate limiting to avoid API throttling</li>
+                        <li>Use connection pooling for high-volume applications</li>
+                        <li>Cache responses when appropriate</li>
+                        <li>Implement exponential backoff for retries</li>
+                    </ul>
+
+                    <h4>🛠️ Error Handling</h4>
+                    <ul>
+                        <li>Always implement try-catch blocks for API calls</li>
+                        <li>Provide meaningful error messages to users</li>
+                        <li>Log errors for debugging and monitoring</li>
+                        <li>Implement fallback responses for critical failures</li>
+                    </ul>
+
+                    <h4>🧪 Testing Strategies</h4>
+                    <ul>
+                        <li>Mock API responses for unit testing</li>
+                        <li>Test error scenarios and edge cases</li>
+                        <li>Implement integration tests with real APIs</li>
+                        <li>Monitor response times and success rates</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        function showQuickStart() {
+            showCode('quick-start');
+            document.getElementById('codeModalTitle').textContent = 'Quick Start Guide';
+            document.getElementById('codeModalContent').innerHTML = `
+                <div style="padding: 1rem;">
+                    <h4>🚀 Get Started in 5 Minutes</h4>
+                    
+                    <h5>Step 1: Choose Your Integration Method</h5>
+                    <p>Select the approach that best fits your needs:</p>
+                    <ul>
+                        <li><strong>Basic Chat:</strong> Simple request-response interaction</li>
+                        <li><strong>WebSocket:</strong> Real-time bidirectional communication</li>
+                        <li><strong>Multimodal:</strong> Process images, audio, and documents</li>
+                    </ul>
+
+                    <h5>Step 2: Get Your API Key</h5>
+                    <p>Obtain an API key from your chosen agent service provider (OpenAI, Anthropic, etc.)</p>
+
+                    <h5>Step 3: Copy and Customize</h5>
+                    <p>Download one of our example files and customize it for your needs:</p>
+                    <div class="code-preview">
+const agent = new SimpleAgent({
+    apiKey: 'your-api-key-here',
+    model: 'gpt-3.5-turbo',
+    temperature: 0.7
+});
+
+const response = await agent.sendMessage('Hello!');
+                    </div>
+
+                    <h5>Step 4: Test and Deploy</h5>
+                    <p>Test your integration thoroughly before deploying to production. Remember to:</p>
+                    <ul>
+                        <li>Use environment variables for API keys</li>
+                        <li>Implement proper error handling</li>
+                        <li>Add rate limiting if needed</li>
+                        <li>Monitor usage and performance</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('codeModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCodeModal();
+            }
+        });
+
+        // Handle escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeCodeModal();
+            }
+        });
+    </script>
+</body>
+</html>
