@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Processing Agent Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .file-info {
+            flex: 1;
+            margin-left: 10px;
+        }
+        .file-name {
+            font-weight: bold;
+        }
+        .file-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .file-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .status-processing {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .analysis-results {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s ease;
+        }
+        .action-buttons {
+            margin-top: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Processing Agent Example</h1>
+    <p>This example demonstrates an AI agent that can analyze and process various types of files including documents, images, and data files.</p>
+
+    <div class="container">
+        <h2>File Upload</h2>
+        <div class="upload-area" id="uploadArea">
+            <p>📁 Drag and drop files here or click to select</p>
+            <p style="font-size: 0.9em; color: #666;">Supported formats: PDF, DOCX, TXT, CSV, JSON, PNG, JPG, GIF</p>
+        </div>
+        <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.csv,.json,.png,.jpg,.jpeg,.gif" style="display: none;">
+    </div>
+
+    <div class="container">
+        <h2>Processing Queue</h2>
+        <div id="fileList" class="file-list">
+            <p style="color: #666; text-align: center;">No files uploaded yet</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Processing Summary</h2>
+        <div class="summary-stats" id="summaryStats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalFiles">0</div>
+                <div class="stat-label">Total Files</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="processedFiles">0</div>
+                <div class="stat-label">Processed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="processingFiles">0</div>
+                <div class="stat-label">Processing</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="errorFiles">0</div>
+                <div class="stat-label">Errors</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // File Processing Agent class
+        class FileProcessingAgent {
+            constructor(config = {}) {
+                this.config = {
+                    apiKey: config.apiKey || 'demo-key',
+                    maxFileSize: config.maxFileSize || 10 * 1024 * 1024, // 10MB
+                    supportedFormats: config.supportedFormats || [
+                        'pdf', 'docx', 'txt', 'csv', 'json', 'png', 'jpg', 'jpeg', 'gif'
+                    ],
+                    ...config
+                };
+                
+                this.processingQueue = [];
+                this.processed = [];
+                this.eventHandlers = {};
+            }
+
+            // Process a file
+            async processFile(file) {
+                // Validate file
+                const validation = this.validateFile(file);
+                if (!validation.valid) {
+                    throw new Error(validation.error);
+                }
+
+                // Create processing entry
+                const processEntry = {
+                    id: this.generateId(),
+                    file,
+                    status: 'processing',
+                    startTime: new Date(),
+                    progress: 0,
+                    analysis: null,
+                    error: null
+                };
+
+                this.processingQueue.push(processEntry);
+                this.emit('fileAdded', processEntry);
+
+                try {
+                    // Simulate processing steps
+                    await this.analyzeFile(processEntry);
+                    
+                    processEntry.status = 'completed';
+                    processEntry.completedTime = new Date();
+                    processEntry.progress = 100;
+                    
+                    this.processed.push(processEntry);
+                    this.emit('fileProcessed', processEntry);
+                    
+                    return processEntry.analysis;
+
+                } catch (error) {
+                    processEntry.status = 'error';
+                    processEntry.error = error.message;
+                    processEntry.progress = 0;
+                    
+                    this.emit('fileError', processEntry);
+                    throw error;
+                }
+            }
+
+            // Validate file before processing
+            validateFile(file) {
+                if (file.size > this.config.maxFileSize) {
+                    return {
+                        valid: false,
+                        error: `File size exceeds limit of ${this.config.maxFileSize / 1024 / 1024}MB`
+                    };
+                }
+
+                const extension = file.name.split('.').pop().toLowerCase();
+                if (!this.config.supportedFormats.includes(extension)) {
+                    return {
+                        valid: false,
+                        error: `Unsupported file format: ${extension}`
+                    };
+                }
+
+                return { valid: true };
+            }
+
+            // Analyze file content based on type
+            async analyzeFile(processEntry) {
+                const file = processEntry.file;
+                const extension = file.name.split('.').pop().toLowerCase();
+
+                // Update progress
+                this.updateProgress(processEntry, 10);
+
+                switch (extension) {
+                    case 'txt':
+                        return await this.analyzeTextFile(processEntry);
+                    case 'pdf':
+                    case 'docx':
+                        return await this.analyzeDocumentFile(processEntry);
+                    case 'csv':
+                        return await this.analyzeDataFile(processEntry);
+                    case 'json':
+                        return await this.analyzeJsonFile(processEntry);
+                    case 'png':
+                    case 'jpg':
+                    case 'jpeg':
+                    case 'gif':
+                        return await this.analyzeImageFile(processEntry);
+                    default:
+                        throw new Error('Unsupported file type');
+                }
+            }
+
+            // Analyze text files
+            async analyzeTextFile(processEntry) {
+                const file = processEntry.file;
+                
+                this.updateProgress(processEntry, 30);
+                await this.delay(1000);
+
+                // Read file content
+                const content = await this.readFileAsText(file);
+                
+                this.updateProgress(processEntry, 60);
+                await this.delay(1500);
+
+                // Perform text analysis
+                const analysis = {
+                    type: 'text',
+                    fileName: file.name,
+                    fileSize: this.formatFileSize(file.size),
+                    wordCount: content.split(/\s+/).length,
+                    characterCount: content.length,
+                    lineCount: content.split('\n').length,
+                    language: this.detectLanguage(content),
+                    sentiment: this.analyzeSentiment(content),
+                    keywords: this.extractKeywords(content),
+                    summary: this.generateSummary(content),
+                    readability: this.calculateReadability(content)
+                };
+
+                this.updateProgress(processEntry, 100);
+                processEntry.analysis = analysis;
+                
+                return analysis;
+            }
+
+            // Analyze document files (PDF, DOCX)
+            async analyzeDocumentFile(processEntry) {
+                const file = processEntry.file;
+                
+                this.updateProgress(processEntry, 20);
+                await this.delay(2000);
+
+                this.updateProgress(processEntry, 50);
+                await this.delay(2000);
+
+                // Simulate document extraction and analysis
+                const analysis = {
+                    type: 'document',
+                    fileName: file.name,
+                    fileSize: this.formatFileSize(file.size),
+                    format: file.name.split('.').pop().toUpperCase(),
+                    estimatedPages: Math.ceil(file.size / 5000), // Rough estimate
+                    metadata: {
+                        created: new Date(file.lastModified),
+                        title: file.name.replace(/\.[^/.]+$/, ""),
+                        hasImages: Math.random() > 0.5,
+                        hasTables: Math.random() > 0.7
+                    },
+                    content: {
+                        wordCount: Math.floor(Math.random() * 5000) + 1000,
+                        headingCount: Math.floor(Math.random() * 20) + 5,
+                        listCount: Math.floor(Math.random() * 10) + 2
+                    },
+                    structure: [
+                        'Title Page',
+                        'Table of Contents',
+                        'Introduction',
+                        'Main Content',
+                        'Conclusion',
+                        'References'
+                    ],
+                    compliance: {
+                        accessibility: Math.random() > 0.3,
+                        readability: 'Grade ' + (Math.floor(Math.random() * 5) + 8)
+                    }
+                };
+
+                this.updateProgress(processEntry, 100);
+                processEntry.analysis = analysis;
+                
+                return analysis;
+            }
+
+            // Analyze data files (CSV)
+            async analyzeDataFile(processEntry) {
+                const file = processEntry.file;
+                
+                this.updateProgress(processEntry, 25);
+                await this.delay(1000);
+
+                // Read and parse CSV content
+                const content = await this.readFileAsText(file);
+                const lines = content.split('\n').filter(line => line.trim());
+                
+                this.updateProgress(processEntry, 60);
+                await this.delay(1500);
+
+                const headers = lines[0] ? lines[0].split(',') : [];
+                const dataRows = lines.slice(1);
+
+                const analysis = {
+                    type: 'data',
+                    fileName: file.name,
+                    fileSize: this.formatFileSize(file.size),
+                    format: 'CSV',
+                    structure: {
+                        columns: headers.length,
+                        rows: dataRows.length,
+                        headers: headers.map(h => h.trim())
+                    },
+                    dataQuality: {
+                        completeness: Math.floor(Math.random() * 20) + 80 + '%',
+                        duplicates: Math.floor(Math.random() * 10),
+                        inconsistencies: Math.floor(Math.random() * 5)
+                    },
+                    statistics: this.generateDataStatistics(headers, dataRows),
+                    recommendations: [
+                        'Data appears to be well-structured',
+                        'Consider data validation for improved quality',
+                        'Suitable for further analysis'
+                    ]
+                };
+
+                this.updateProgress(processEntry, 100);
+                processEntry.analysis = analysis;
+                
+                return analysis;
+            }
+
+            // Analyze JSON files
+            async analyzeJsonFile(processEntry) {
+                const file = processEntry.file;
+                
+                this.updateProgress(processEntry, 30);
+                await this.delay(1000);
+
+                try {
+                    const content = await this.readFileAsText(file);
+                    const jsonData = JSON.parse(content);
+                    
+                    this.updateProgress(processEntry, 70);
+                    await this.delay(1000);
+
+                    const analysis = {
+                        type: 'json',
+                        fileName: file.name,
+                        fileSize: this.formatFileSize(file.size),
+                        format: 'JSON',
+                        structure: this.analyzeJsonStructure(jsonData),
+                        validation: {
+                            valid: true,
+                            wellFormed: true,
+                            schema: this.detectJsonSchema(jsonData)
+                        },
+                        content: {
+                            topLevelKeys: Object.keys(jsonData).length,
+                            dataTypes: this.getJsonDataTypes(jsonData),
+                            depth: this.calculateJsonDepth(jsonData)
+                        }
+                    };
+
+                    this.updateProgress(processEntry, 100);
+                    processEntry.analysis = analysis;
+                    
+                    return analysis;
+
+                } catch (error) {
+                    throw new Error('Invalid JSON format: ' + error.message);
+                }
+            }
+
+            // Analyze image files
+            async analyzeImageFile(processEntry) {
+                const file = processEntry.file;
+                
+                this.updateProgress(processEntry, 20);
+                await this.delay(1500);
+
+                // Create image element to get dimensions
+                const imageUrl = URL.createObjectURL(file);
+                const img = new Image();
+                
+                return new Promise((resolve, reject) => {
+                    img.onload = async () => {
+                        this.updateProgress(processEntry, 60);
+                        await this.delay(2000);
+
+                        const analysis = {
+                            type: 'image',
+                            fileName: file.name,
+                            fileSize: this.formatFileSize(file.size),
+                            format: file.type,
+                            dimensions: {
+                                width: img.width,
+                                height: img.height,
+                                aspectRatio: (img.width / img.height).toFixed(2)
+                            },
+                            properties: {
+                                colorDepth: '24-bit',
+                                compression: 'Standard',
+                                hasTransparency: file.type === 'image/png'
+                            },
+                            analysis: {
+                                estimatedObjects: Math.floor(Math.random() * 10) + 1,
+                                dominantColors: this.generateColorPalette(),
+                                brightness: Math.floor(Math.random() * 100),
+                                contrast: Math.floor(Math.random() * 100),
+                                quality: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)]
+                            },
+                            suggestions: [
+                                'Image quality is suitable for web use',
+                                'Consider optimization for faster loading',
+                                'Alt text recommended for accessibility'
+                            ]
+                        };
+
+                        this.updateProgress(processEntry, 100);
+                        processEntry.analysis = analysis;
+                        
+                        URL.revokeObjectURL(imageUrl);
+                        resolve(analysis);
+                    };
+
+                    img.onerror = () => {
+                        URL.revokeObjectURL(imageUrl);
+                        reject(new Error('Failed to load image'));
+                    };
+
+                    img.src = imageUrl;
+                });
+            }
+
+            // Utility methods
+            updateProgress(processEntry, progress) {
+                processEntry.progress = progress;
+                this.emit('progressUpdate', processEntry);
+            }
+
+            readFileAsText(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                });
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            generateId() {
+                return 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            // Mock analysis methods
+            detectLanguage(text) {
+                return ['English', 'Spanish', 'French', 'German'][Math.floor(Math.random() * 4)];
+            }
+
+            analyzeSentiment(text) {
+                const sentiments = ['Positive', 'Neutral', 'Negative'];
+                return sentiments[Math.floor(Math.random() * sentiments.length)];
+            }
+
+            extractKeywords(text) {
+                const words = text.toLowerCase().split(/\s+/);
+                const common = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'];
+                return words.filter(word => word.length > 4 && !common.includes(word))
+                           .slice(0, 10);
+            }
+
+            generateSummary(text) {
+                return text.substring(0, 200) + (text.length > 200 ? '...' : '');
+            }
+
+            calculateReadability(text) {
+                return 'Grade ' + (Math.floor(Math.random() * 5) + 8);
+            }
+
+            generateDataStatistics(headers, rows) {
+                return headers.map(header => ({
+                    column: header.trim(),
+                    type: ['String', 'Number', 'Date', 'Boolean'][Math.floor(Math.random() * 4)],
+                    uniqueValues: Math.floor(Math.random() * rows.length) + 1,
+                    nullCount: Math.floor(Math.random() * 10)
+                }));
+            }
+
+            analyzeJsonStructure(data) {
+                if (Array.isArray(data)) {
+                    return { type: 'array', length: data.length };
+                } else if (typeof data === 'object') {
+                    return { type: 'object', keys: Object.keys(data) };
+                } else {
+                    return { type: typeof data };
+                }
+            }
+
+            detectJsonSchema(data) {
+                return 'Custom schema detected';
+            }
+
+            getJsonDataTypes(data) {
+                const types = new Set();
+                const traverse = (obj) => {
+                    if (Array.isArray(obj)) {
+                        types.add('array');
+                        obj.forEach(traverse);
+                    } else if (typeof obj === 'object' && obj !== null) {
+                        types.add('object');
+                        Object.values(obj).forEach(traverse);
+                    } else {
+                        types.add(typeof obj);
+                    }
+                };
+                traverse(data);
+                return Array.from(types);
+            }
+
+            calculateJsonDepth(obj, depth = 1) {
+                if (typeof obj !== 'object' || obj === null) return depth;
+                return Math.max(...Object.values(obj).map(v => this.calculateJsonDepth(v, depth + 1)));
+            }
+
+            generateColorPalette() {
+                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
+                return colors.slice(0, Math.floor(Math.random() * 3) + 2);
+            }
+
+            // Event handling
+            on(event, handler) {
+                if (!this.eventHandlers[event]) {
+                    this.eventHandlers[event] = [];
+                }
+                this.eventHandlers[event].push(handler);
+            }
+
+            emit(event, data) {
+                if (this.eventHandlers[event]) {
+                    this.eventHandlers[event].forEach(handler => handler(data));
+                }
+            }
+
+            // Get processing statistics
+            getStats() {
+                return {
+                    total: this.processingQueue.length,
+                    processed: this.processed.length,
+                    processing: this.processingQueue.filter(p => p.status === 'processing').length,
+                    errors: this.processingQueue.filter(p => p.status === 'error').length
+                };
+            }
+        }
+
+        // Initialize the file processing agent
+        const agent = new FileProcessingAgent();
+
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+
+        // Statistics elements
+        const totalFiles = document.getElementById('totalFiles');
+        const processedFiles = document.getElementById('processedFiles');
+        const processingFiles = document.getElementById('processingFiles');
+        const errorFiles = document.getElementById('errorFiles');
+
+        // Set up event listeners for the agent
+        agent.on('fileAdded', (processEntry) => {
+            addFileToUI(processEntry);
+            updateStats();
+        });
+
+        agent.on('progressUpdate', (processEntry) => {
+            updateFileProgress(processEntry);
+        });
+
+        agent.on('fileProcessed', (processEntry) => {
+            updateFileStatus(processEntry);
+            updateStats();
+        });
+
+        agent.on('fileError', (processEntry) => {
+            updateFileStatus(processEntry);
+            updateStats();
+        });
+
+        // File upload handling
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Handle file processing
+        async function handleFiles(files) {
+            if (fileList.children.length === 1 && fileList.children[0].tagName === 'P') {
+                fileList.innerHTML = '';
+            }
+
+            for (const file of files) {
+                try {
+                    await agent.processFile(file);
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                }
+            }
+        }
+
+        // UI update functions
+        function addFileToUI(processEntry) {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.id = `file-${processEntry.id}`;
+
+            fileItem.innerHTML = `
+                <div style="font-size: 24px;">📄</div>
+                <div class="file-info">
+                    <div class="file-name">${processEntry.file.name}</div>
+                    <div class="file-details">
+                        ${agent.formatFileSize(processEntry.file.size)} • 
+                        ${processEntry.file.type || 'Unknown type'}
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="file-status status-processing">Processing...</div>
+            `;
+
+            fileList.appendChild(fileItem);
+        }
+
+        function updateFileProgress(processEntry) {
+            const fileItem = document.getElementById(`file-${processEntry.id}`);
+            if (fileItem) {
+                const progressFill = fileItem.querySelector('.progress-fill');
+                progressFill.style.width = `${processEntry.progress}%`;
+            }
+        }
+
+        function updateFileStatus(processEntry) {
+            const fileItem = document.getElementById(`file-${processEntry.id}`);
+            if (!fileItem) return;
+
+            const statusElement = fileItem.querySelector('.file-status');
+            const progressBar = fileItem.querySelector('.progress-bar');
+
+            if (processEntry.status === 'completed') {
+                statusElement.textContent = 'Completed';
+                statusElement.className = 'file-status status-completed';
+                progressBar.style.display = 'none';
+
+                // Add analysis results
+                if (processEntry.analysis) {
+                    addAnalysisResults(fileItem, processEntry.analysis);
+                }
+            } else if (processEntry.status === 'error') {
+                statusElement.textContent = 'Error';
+                statusElement.className = 'file-status status-error';
+                progressBar.style.display = 'none';
+
+                // Add error message
+                const errorDiv = document.createElement('div');
+                errorDiv.style.color = 'red';
+                errorDiv.style.marginTop = '10px';
+                errorDiv.textContent = `Error: ${processEntry.error}`;
+                fileItem.appendChild(errorDiv);
+            }
+        }
+
+        function addAnalysisResults(fileItem, analysis) {
+            const resultsDiv = document.createElement('div');
+            resultsDiv.className = 'analysis-results';
+            resultsDiv.innerHTML = generateAnalysisHTML(analysis);
+            fileItem.appendChild(resultsDiv);
+        }
+
+        function generateAnalysisHTML(analysis) {
+            let html = `<h4>Analysis Results</h4>`;
+            
+            switch (analysis.type) {
+                case 'text':
+                    html += `
+                        <p><strong>Word Count:</strong> ${analysis.wordCount}</p>
+                        <p><strong>Language:</strong> ${analysis.language}</p>
+                        <p><strong>Sentiment:</strong> ${analysis.sentiment}</p>
+                        <p><strong>Readability:</strong> ${analysis.readability}</p>
+                        <p><strong>Keywords:</strong> ${analysis.keywords.join(', ')}</p>
+                    `;
+                    break;
+                case 'document':
+                    html += `
+                        <p><strong>Format:</strong> ${analysis.format}</p>
+                        <p><strong>Estimated Pages:</strong> ${analysis.estimatedPages}</p>
+                        <p><strong>Word Count:</strong> ${analysis.content.wordCount}</p>
+                        <p><strong>Structure:</strong> ${analysis.structure.join(', ')}</p>
+                    `;
+                    break;
+                case 'data':
+                    html += `
+                        <p><strong>Columns:</strong> ${analysis.structure.columns}</p>
+                        <p><strong>Rows:</strong> ${analysis.structure.rows}</p>
+                        <p><strong>Data Quality:</strong> ${analysis.dataQuality.completeness} complete</p>
+                    `;
+                    break;
+                case 'image':
+                    html += `
+                        <p><strong>Dimensions:</strong> ${analysis.dimensions.width}x${analysis.dimensions.height}</p>
+                        <p><strong>Aspect Ratio:</strong> ${analysis.dimensions.aspectRatio}</p>
+                        <p><strong>Quality:</strong> ${analysis.analysis.quality}</p>
+                        <p><strong>Dominant Colors:</strong> 
+                            ${analysis.analysis.dominantColors.map(color => 
+                                `<span style="background-color: ${color}; padding: 2px 8px; margin: 2px; border-radius: 3px; color: white; font-size: 0.8em;">${color}</span>`
+                            ).join('')}
+                        </p>
+                    `;
+                    break;
+                case 'json':
+                    html += `
+                        <p><strong>Structure:</strong> ${analysis.structure.type}</p>
+                        <p><strong>Top-level Keys:</strong> ${analysis.content.topLevelKeys}</p>
+                        <p><strong>Data Types:</strong> ${analysis.content.dataTypes.join(', ')}</p>
+                        <p><strong>Depth:</strong> ${analysis.content.depth} levels</p>
+                    `;
+                    break;
+            }
+            
+            return html;
+        }
+
+        function updateStats() {
+            const stats = agent.getStats();
+            totalFiles.textContent = stats.total;
+            processedFiles.textContent = stats.processed;
+            processingFiles.textContent = stats.processing;
+            errorFiles.textContent = stats.errors;
+        }
+
+        // Initialize stats
+        updateStats();
+    </script>
+</body>
+</html>

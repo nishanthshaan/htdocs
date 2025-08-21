@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Assistant Agent Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .voice-container {
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .microphone {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #ff4757;
+            border: none;
+            cursor: pointer;
+            margin: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .microphone:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+        }
+        .microphone.listening {
+            background-color: #26de81;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(38, 222, 129, 0.7);
+            }
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(38, 222, 129, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(38, 222, 129, 0);
+            }
+        }
+        .status {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        .transcript {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            min-height: 50px;
+            text-align: left;
+        }
+        .response {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #333;
+        }
+        button:hover {
+            background-color: #f0f0f0;
+        }
+        .voice-settings {
+            text-align: left;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Voice Assistant Agent Example</h1>
+    <p>This example demonstrates voice interaction with an AI agent using Web Speech API.</p>
+    
+    <div class="voice-container">
+        <div class="status" id="status">Click the microphone to start talking</div>
+        
+        <button class="microphone" id="micButton">
+            🎤
+        </button>
+        
+        <div class="transcript">
+            <strong>You said:</strong>
+            <div id="transcript">Click the microphone and start speaking...</div>
+        </div>
+        
+        <div class="response">
+            <strong>Agent response:</strong>
+            <div id="response">Waiting for your input...</div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="clearTranscript()">Clear</button>
+            <button onclick="toggleVoiceOutput()">Toggle Voice Response</button>
+            <button onclick="showSettings()">Settings</button>
+        </div>
+        
+        <div class="voice-settings" id="settings" style="display: none;">
+            <h3>Voice Settings</h3>
+            <label>
+                Language: 
+                <select id="languageSelect">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
+                    <option value="de-DE">German</option>
+                </select>
+            </label><br><br>
+            <label>
+                Voice Speed: 
+                <input type="range" id="rateSlider" min="0.5" max="2" value="1" step="0.1">
+                <span id="rateValue">1</span>
+            </label><br><br>
+            <label>
+                Voice Pitch: 
+                <input type="range" id="pitchSlider" min="0" max="2" value="1" step="0.1">
+                <span id="pitchValue">1</span>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        // Voice Assistant Agent class
+        class VoiceAgent {
+            constructor(config = {}) {
+                this.config = {
+                    language: config.language || 'en-US',
+                    continuous: config.continuous || false,
+                    interimResults: config.interimResults || true,
+                    voiceEnabled: config.voiceEnabled !== false,
+                    rate: config.rate || 1,
+                    pitch: config.pitch || 1,
+                    ...config
+                };
+                
+                this.recognition = null;
+                this.synthesis = window.speechSynthesis;
+                this.isListening = false;
+                this.voiceEnabled = true;
+                
+                this.initializeSpeechRecognition();
+            }
+
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window) {
+                    this.recognition = new webkitSpeechRecognition();
+                } else if ('SpeechRecognition' in window) {
+                    this.recognition = new SpeechRecognition();
+                } else {
+                    console.error('Speech recognition not supported');
+                    return;
+                }
+
+                this.recognition.continuous = this.config.continuous;
+                this.recognition.interimResults = this.config.interimResults;
+                this.recognition.lang = this.config.language;
+
+                this.recognition.onstart = () => {
+                    this.isListening = true;
+                    this.onStatusChange('Listening... Speak now!');
+                };
+
+                this.recognition.onresult = (event) => {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        transcript += event.results[i][0].transcript;
+                    }
+                    this.onTranscript(transcript);
+                    
+                    if (event.results[event.results.length - 1].isFinal) {
+                        this.processMessage(transcript);
+                    }
+                };
+
+                this.recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    this.onStatusChange(`Error: ${event.error}`);
+                    this.isListening = false;
+                };
+
+                this.recognition.onend = () => {
+                    this.isListening = false;
+                    this.onStatusChange('Click the microphone to start talking');
+                };
+            }
+
+            startListening() {
+                if (this.recognition && !this.isListening) {
+                    this.recognition.start();
+                }
+            }
+
+            stopListening() {
+                if (this.recognition && this.isListening) {
+                    this.recognition.stop();
+                }
+            }
+
+            async processMessage(message) {
+                this.onStatusChange('Processing your message...');
+                
+                // Simulate agent processing
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const response = this.generateResponse(message);
+                this.onResponse(response);
+                
+                if (this.voiceEnabled) {
+                    this.speak(response);
+                }
+            }
+
+            generateResponse(message) {
+                const lowerMessage = message.toLowerCase();
+                
+                if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+                    return "Hello! I'm your voice assistant. How can I help you today?";
+                } else if (lowerMessage.includes('time')) {
+                    return `The current time is ${new Date().toLocaleTimeString()}`;
+                } else if (lowerMessage.includes('date')) {
+                    return `Today is ${new Date().toLocaleDateString()}`;
+                } else if (lowerMessage.includes('weather')) {
+                    return "I don't have access to real-time weather data, but I recommend checking your local weather app.";
+                } else if (lowerMessage.includes('help')) {
+                    return "I can help you with basic questions about time, date, and general conversation. Just speak naturally!";
+                } else if (lowerMessage.includes('thank')) {
+                    return "You're welcome! Is there anything else I can help you with?";
+                } else {
+                    return `I heard you say: "${message}". That's interesting! Can you tell me more about that?`;
+                }
+            }
+
+            speak(text) {
+                if (!this.synthesis) return;
+                
+                // Cancel any ongoing speech
+                this.synthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = this.config.rate;
+                utterance.pitch = this.config.pitch;
+                utterance.lang = this.config.language;
+                
+                utterance.onstart = () => {
+                    this.onStatusChange('Speaking...');
+                };
+                
+                utterance.onend = () => {
+                    this.onStatusChange('Click the microphone to start talking');
+                };
+                
+                this.synthesis.speak(utterance);
+            }
+
+            // Callback methods (to be overridden)
+            onStatusChange(status) {}
+            onTranscript(transcript) {}
+            onResponse(response) {}
+        }
+
+        // Initialize the voice agent
+        const voiceAgent = new VoiceAgent();
+
+        // DOM elements
+        const micButton = document.getElementById('micButton');
+        const statusElement = document.getElementById('status');
+        const transcriptElement = document.getElementById('transcript');
+        const responseElement = document.getElementById('response');
+
+        // Set up callbacks
+        voiceAgent.onStatusChange = (status) => {
+            statusElement.textContent = status;
+            micButton.classList.toggle('listening', voiceAgent.isListening);
+        };
+
+        voiceAgent.onTranscript = (transcript) => {
+            transcriptElement.textContent = transcript;
+        };
+
+        voiceAgent.onResponse = (response) => {
+            responseElement.textContent = response;
+        };
+
+        // Event listeners
+        micButton.addEventListener('click', () => {
+            if (voiceAgent.isListening) {
+                voiceAgent.stopListening();
+            } else {
+                voiceAgent.startListening();
+            }
+        });
+
+        // Utility functions
+        function clearTranscript() {
+            transcriptElement.textContent = 'Click the microphone and start speaking...';
+            responseElement.textContent = 'Waiting for your input...';
+        }
+
+        function toggleVoiceOutput() {
+            voiceAgent.voiceEnabled = !voiceAgent.voiceEnabled;
+            statusElement.textContent = `Voice output ${voiceAgent.voiceEnabled ? 'enabled' : 'disabled'}`;
+        }
+
+        function showSettings() {
+            const settings = document.getElementById('settings');
+            settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Settings controls
+        document.getElementById('languageSelect').addEventListener('change', (e) => {
+            voiceAgent.config.language = e.target.value;
+            if (voiceAgent.recognition) {
+                voiceAgent.recognition.lang = e.target.value;
+            }
+        });
+
+        document.getElementById('rateSlider').addEventListener('input', (e) => {
+            voiceAgent.config.rate = parseFloat(e.target.value);
+            document.getElementById('rateValue').textContent = e.target.value;
+        });
+
+        document.getElementById('pitchSlider').addEventListener('input', (e) => {
+            voiceAgent.config.pitch = parseFloat(e.target.value);
+            document.getElementById('pitchValue').textContent = e.target.value;
+        });
+
+        // Check for speech recognition support
+        if (!voiceAgent.recognition) {
+            statusElement.textContent = 'Speech recognition not supported in this browser';
+            micButton.disabled = true;
+        }
+    </script>
+</body>
+</html>
